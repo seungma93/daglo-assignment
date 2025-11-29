@@ -1,4 +1,4 @@
-package com.seungma.daglo.network
+package com.seungma.daglo.network.retrofit
 
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
