@@ -65,4 +65,7 @@ dependencies {
 
     // Swipe (스와이프 리프레시)
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+
+    // Glide (이미지 로딩)
+    implementation("com.github.bumptech.glide:glide:4.16.0")
 }
