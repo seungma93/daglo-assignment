@@ -5,5 +5,5 @@ import com.seungma.daglo.presenter.list.form.CharactersLoadForm
 
 interface CharacterDataRepository {
 
-    fun loadCharacters(charactersLoadForm: CharactersLoadForm): CharactersLoadEntity
+    suspend fun loadCharacters(charactersLoadForm: CharactersLoadForm): CharactersLoadEntity
 }

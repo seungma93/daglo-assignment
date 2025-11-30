@@ -1,8 +1,8 @@
 package com.seungma.daglo.data.datasource.character
 
 import com.seungma.daglo.data.model.request.CharactersLoadRequest
-import com.seungma.daglo.data.model.response.CharactersLoadResponse
+import com.seungma.daglo.data.model.response.PagedResponse
 
 interface CharacterDataSource {
-    fun loadCharacters(charactersLoadRequest: CharactersLoadRequest): CharactersLoadResponse
+    suspend fun loadCharacters(charactersLoadRequest: CharactersLoadRequest): PagedResponse
 }

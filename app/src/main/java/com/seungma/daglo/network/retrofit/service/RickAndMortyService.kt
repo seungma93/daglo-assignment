@@ -1,7 +1,7 @@
 package com.seungma.daglo.network.retrofit.service
 
-import com.seungma.daglo.network.retrofit.dto.CharacterDto
-import com.seungma.daglo.network.retrofit.dto.PagedResponseDto
+import com.seungma.daglo.data.model.response.CharacterResponse
+import com.seungma.daglo.data.model.response.PagedResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -16,15 +16,15 @@ interface RickAndMortyService {
         @Query("species") species: String? = null,
         @Query("type") type: String? = null,
         @Query("gender") gender: String? = null
-    ): PagedResponseDto<CharacterDto>
+    ): PagedResponse
 
     @GET("character/{id}")
     suspend fun getCharacter(
         @Path("id") id: Int
-    ): CharacterDto
+    ): CharacterResponse
 
     @GET("character/{ids}")
     suspend fun getCharactersByIds(
         @Path("ids") idsCsv: String
-    ): List<CharacterDto>
+    ): List<CharacterResponse>
 }
