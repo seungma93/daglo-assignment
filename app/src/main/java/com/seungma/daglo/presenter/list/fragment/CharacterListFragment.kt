@@ -72,6 +72,22 @@ class CharacterListFragment : Fragment() {
 
         binding.apply {
             rvCharacterList.adapter = adapter
+
+            swipeRefreshLayout.setOnRefreshListener {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        characterViewModel.loadCharacters(
+                            charactersLoadForm = CharactersLoadForm(
+                                reload = true
+                            )
+                        )
+                    } catch (e: Exception) {
+
+                    } finally {
+                        swipeRefreshLayout.isRefreshing = false
+                    }
+                }
+            }
         }
     }
 
@@ -97,6 +113,6 @@ class CharacterViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return CharacterViewModel(
             loadCharactersUseCase = loadCharactersUseCase
-            ) as T
+        ) as T
     }
 }
