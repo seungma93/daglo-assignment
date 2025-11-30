@@ -62,4 +62,7 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0") // Gson 컨버터
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0") // 통신
+
+    // Swipe (스와이프 리프레시)
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 }
