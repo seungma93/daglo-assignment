@@ -20,8 +20,9 @@ fun PagedResponse.toEntity(): CharactersLoadEntity {
 fun CharacterResponse.toEntity(): CharacterEntity {
     val locationEntity = location?.toEntity() ?: LocationEntity(name = "", url = "")
     return CharacterEntity(
+        id = id ?: throw Exception("id is null"),
         image = image.orEmpty(),
-        name = name ?: throw Exception("name is null"),
+        name = name.orEmpty(),
         status = status.orEmpty(),
         gender = gender.orEmpty(),
         species = species.orEmpty(),

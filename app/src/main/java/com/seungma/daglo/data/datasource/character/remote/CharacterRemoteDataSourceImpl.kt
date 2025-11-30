@@ -7,7 +7,7 @@ import com.seungma.daglo.data.model.response.PagedResponse
 import com.seungma.daglo.network.retrofit.RetrofitClient
 import com.seungma.daglo.network.retrofit.service.RickAndMortyService
 
-class CharacterRemoteDataSource(private val retrofitClient: RetrofitClient) : CharacterDataSource {
+class CharacterRemoteDataSourceImpl(private val retrofitClient: RetrofitClient) : CharacterDataSource {
     private val characterService = retrofitClient.retrofit.create(RickAndMortyService::class.java)
     private var loadIndex: Int? = null
 
