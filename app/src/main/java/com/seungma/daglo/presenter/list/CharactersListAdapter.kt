@@ -54,6 +54,7 @@ class CharactersListAdapter(
                 tvName.text = characterEntity.name
                 tvGender.text = characterEntity.gender
                 tvStatus.text = characterEntity.status
+                tvId.text = characterEntity.id.toString()
             }
         }
     }

@@ -9,6 +9,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.seungma.daglo.data.datasource.character.remote.CharacterRemoteDataSourceImpl
 import com.seungma.daglo.data.repository.CharacterDataRepositoryImpl
 import com.seungma.daglo.databinding.FragmentCharacterListBinding
@@ -27,6 +29,30 @@ class CharacterListFragment : Fragment() {
     private val binding get() = _binding!!
     private var _adapter: CharactersListAdapter? = null
     private val adapter get() = _adapter!!
+
+    private val onScrollListener = object : RecyclerView.OnScrollListener() {
+        override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            super.onScrolled(recyclerView, dx, dy)
+            
+            val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
+            val totalItemCount = layoutManager.itemCount
+            val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
+            
+            // 마지막 아이템에서 3개 전에 도달했을 때 다음 페이지 로드
+            val threshold = 3
+            val isLoading = characterViewModel.viewState.value.isLoading
+            if (!isLoading && lastVisibleItemPosition >= totalItemCount - threshold) {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    when(characterViewModel.viewState.value.isLast) {
+                        true -> {}
+                        false -> characterViewModel.loadCharacters(
+                            charactersLoadForm = CharactersLoadForm(reload = false)
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     private val characterViewModel: CharacterViewModel by lazy {
         // dataSource
@@ -80,6 +106,7 @@ class CharacterListFragment : Fragment() {
 
         binding.apply {
             rvCharacterList.adapter = adapter
+            rvCharacterList.addOnScrollListener(onScrollListener)
 
             swipeRefreshLayout.setOnRefreshListener {
                 viewLifecycleOwner.lifecycleScope.launch {
@@ -101,6 +128,9 @@ class CharacterListFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        binding.rvCharacterList.removeOnScrollListener(onScrollListener)
+        binding.rvCharacterList.adapter = null
+        _adapter = null
         _binding = null
     }
 

@@ -12,7 +12,8 @@ fun PagedResponse.toEntity(): CharactersLoadEntity {
     return CharactersLoadEntity(
         characters = results?.map {
             it.toEntity()
-        } as List<CharacterEntity>
+        } as List<CharacterEntity>,
+        isLast = info?.next == null
     )
 }
 
