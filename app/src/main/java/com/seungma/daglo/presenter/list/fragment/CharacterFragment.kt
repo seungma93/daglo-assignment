@@ -46,9 +46,20 @@ class CharacterFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.apply {
-            Glide.with(requireContext())
-                .load(characterItemKeyEntity.characterEntity.image)
-                .into(ivImage)
+            characterItemKeyEntity.characterEntity.let {
+                Glide.with(requireContext())
+                    .load(it.image)
+                    .into(ivImage)
+
+                tvName.text = it.name
+                tvGender.text = it.gender
+                tvStatus.text = it.status
+                tvSpecies.text = it.species
+                tvOriginName.text = it.orgin.name
+                tvOriginUrl.text = it.orgin.url
+                tvLocationName.text = it.location.name
+                tvLocationUrl.text = it.location.url
+            }
         }
     }
 
