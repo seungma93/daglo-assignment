@@ -12,8 +12,11 @@ import androidx.lifecycle.lifecycleScope
 import com.seungma.daglo.data.datasource.character.remote.CharacterRemoteDataSourceImpl
 import com.seungma.daglo.data.repository.CharacterDataRepositoryImpl
 import com.seungma.daglo.databinding.FragmentCharacterListBinding
+import com.seungma.daglo.domain.list.entity.CharacterItemKeyEntity
 import com.seungma.daglo.domain.list.usecase.LoadCharactersUseCase
 import com.seungma.daglo.network.retrofit.RetrofitClient
+import com.seungma.daglo.presenter.EndPoint
+import com.seungma.daglo.presenter.Navigable
 import com.seungma.daglo.presenter.list.CharactersListAdapter
 import com.seungma.daglo.presenter.list.form.CharactersLoadForm
 import com.seungma.daglo.presenter.list.viewmodel.CharacterViewModel
@@ -66,7 +69,12 @@ class CharacterListFragment : Fragment() {
 
         _adapter = CharactersListAdapter(
             itemClick = {
-
+                val endPoint = EndPoint.CharacterItem(
+                    characterItemKeyEntity = CharacterItemKeyEntity(
+                        characterEntity = it
+                    )
+                )
+                (requireActivity() as? Navigable)?.navigateFragment(endPoint)
             }
         )
 

@@ -5,10 +5,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.seungma.daglo.R
 import com.seungma.daglo.databinding.ActivityMainBinding
+import com.seungma.daglo.domain.list.entity.CharacterItemKeyEntity
+import com.seungma.daglo.presenter.list.fragment.CharacterFragment
 import com.seungma.daglo.presenter.list.fragment.CharacterListFragment
 
 sealed class EndPoint {
     object CharacterList : EndPoint()
+    data class CharacterItem(val characterItemKeyEntity: CharacterItemKeyEntity) : EndPoint()
     object Error : EndPoint()
 }
 
@@ -55,6 +58,11 @@ class MainActivity() : AppCompatActivity(), Navigable {
             is EndPoint.CharacterList -> {
                 val fragment = CharacterListFragment()
                 setFragment(fragment, R.id.activity_frame_layout, false)
+            }
+
+            is EndPoint.CharacterItem -> {
+                val fragment = CharacterFragment.newInstance(characterItemKeyEntity = endPoint.characterItemKeyEntity)
+                setFragment(fragment, R.id.activity_frame_layout, true)
             }
 
             is EndPoint.Error -> {
