@@ -29,6 +29,7 @@ class CharacterListFragment : Fragment() {
     private val binding get() = _binding!!
     private var _adapter: CharactersListAdapter? = null
     private val adapter get() = _adapter!!
+    private var scrollPosition = 0
 
     private val onScrollListener = object : RecyclerView.OnScrollListener() {
         override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -87,11 +88,10 @@ class CharacterListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            characterViewModel.loadCharacters(charactersLoadForm = CharactersLoadForm(reload = true))
-            subscribe()
+        // 스크롤 위치 복원
+        savedInstanceState?.let {
+            scrollPosition = it.getInt("scroll_position", 0)
         }
-
 
         _adapter = CharactersListAdapter(
             itemClick = {
@@ -124,6 +124,25 @@ class CharacterListFragment : Fragment() {
                 }
             }
         }
+
+        // ViewModel에 데이터가 없을 때만 초기 로드
+        viewLifecycleOwner.lifecycleScope.launch {
+            if (characterViewModel.viewState.value.characters.isEmpty()) {
+                characterViewModel.loadCharacters(charactersLoadForm = CharactersLoadForm(reload = true))
+            }
+            subscribe()
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // 스크롤 위치 저장
+        binding.rvCharacterList.layoutManager?.let { layoutManager ->
+            if (layoutManager is LinearLayoutManager) {
+                val firstVisiblePosition = layoutManager.findFirstVisibleItemPosition()
+                outState.putInt("scroll_position", firstVisiblePosition)
+            }
+        }
     }
 
     override fun onDestroyView() {
@@ -137,7 +156,15 @@ class CharacterListFragment : Fragment() {
     private suspend fun subscribe() {
         characterViewModel.viewState.collect {
             Log.d("seungma", "콜렉트" + it.characters)
-            adapter.submitList(it.characters)
+            val layoutManager = binding.rvCharacterList.layoutManager as? LinearLayoutManager
+            
+            adapter.submitList(it.characters) {
+                // 리스트 업데이트 후 스크롤 위치 복원
+                if (scrollPosition > 0 && scrollPosition < it.characters.size) {
+                    layoutManager?.scrollToPosition(scrollPosition)
+                    scrollPosition = 0 // 복원 후 초기화
+                }
+            }
         }
     }
 
