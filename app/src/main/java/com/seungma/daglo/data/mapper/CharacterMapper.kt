@@ -5,14 +5,24 @@ import com.seungma.daglo.data.model.response.LocationResponse
 import com.seungma.daglo.data.model.response.PagedResponse
 import com.seungma.daglo.domain.list.entity.CharacterEntity
 import com.seungma.daglo.domain.list.entity.CharactersLoadEntity
+import com.seungma.daglo.domain.list.entity.CharactersSearchEntity
 import com.seungma.daglo.domain.list.entity.LocationEntity
 
 
-fun PagedResponse.toEntity(): CharactersLoadEntity {
+fun PagedResponse.toLoadEntity(): CharactersLoadEntity {
     return CharactersLoadEntity(
         characters = results?.map {
             it.toEntity()
-        } as List<CharacterEntity>,
+        } ?: emptyList(),
+        isLast = info?.next == null
+    )
+}
+
+fun PagedResponse.toSearchEntity(): CharactersSearchEntity {
+    return CharactersSearchEntity(
+        characters = results?.map {
+            it.toEntity()
+        } ?: emptyList(),
         isLast = info?.next == null
     )
 }
