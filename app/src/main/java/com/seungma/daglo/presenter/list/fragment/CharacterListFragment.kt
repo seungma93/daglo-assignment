@@ -1,6 +1,8 @@
 package com.seungma.daglo.presenter.list.fragment
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -16,11 +18,13 @@ import com.seungma.daglo.data.repository.CharacterDataRepositoryImpl
 import com.seungma.daglo.databinding.FragmentCharacterListBinding
 import com.seungma.daglo.domain.list.entity.CharacterItemKeyEntity
 import com.seungma.daglo.domain.list.usecase.LoadCharactersUseCase
+import com.seungma.daglo.domain.list.usecase.SearchCharactersUseCase
 import com.seungma.daglo.network.retrofit.RetrofitClient
 import com.seungma.daglo.presenter.EndPoint
 import com.seungma.daglo.presenter.Navigable
 import com.seungma.daglo.presenter.list.CharactersListAdapter
 import com.seungma.daglo.presenter.list.form.CharactersLoadForm
+import com.seungma.daglo.presenter.list.form.CharactersSearchForm
 import com.seungma.daglo.presenter.list.viewmodel.CharacterViewModel
 import kotlinx.coroutines.launch
 
@@ -46,9 +50,21 @@ class CharacterListFragment : Fragment() {
                 viewLifecycleOwner.lifecycleScope.launch {
                     when(characterViewModel.viewState.value.isLast) {
                         true -> {}
-                        false -> characterViewModel.loadCharacters(
-                            charactersLoadForm = CharactersLoadForm(reload = false)
-                        )
+                        false -> {
+
+                            when(binding.etText.text.isNullOrBlank()) {
+                                true -> {
+                                    characterViewModel.loadCharacters(
+                                        charactersLoadForm = CharactersLoadForm(reload = false)
+                                    )
+                                }
+                                false -> {
+                                    characterViewModel.searchCharacters(
+                                        charactersSearchForm = CharactersSearchForm(keyword = binding.etText.text?.toString() ?: "", reload = false)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -67,9 +83,12 @@ class CharacterListFragment : Fragment() {
         // useCase
         val loadCharactersUseCase =
             LoadCharactersUseCase(characterDataRepository = characterDataRepositoryImpl)
+        val searchCharactersUseCase = SearchCharactersUseCase(characterDataRepository = characterDataRepositoryImpl)
+
         // factory
         val factory = CharacterViewModelFactory(
-            loadCharactersUseCase = loadCharactersUseCase
+            loadCharactersUseCase = loadCharactersUseCase,
+            searchCharactersUseCase = searchCharactersUseCase
         )
 
         ViewModelProvider(this, factory).get(CharacterViewModel::class.java)
@@ -111,11 +130,19 @@ class CharacterListFragment : Fragment() {
             swipeRefreshLayout.setOnRefreshListener {
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
-                        characterViewModel.loadCharacters(
-                            charactersLoadForm = CharactersLoadForm(
-                                reload = true
-                            )
-                        )
+
+                        when(binding.etText.text.isNullOrBlank()) {
+                            true -> {
+                                characterViewModel.loadCharacters(
+                                    charactersLoadForm = CharactersLoadForm(reload = true)
+                                )
+                            }
+                            false -> {
+                                characterViewModel.searchCharacters(
+                                    charactersSearchForm = CharactersSearchForm(keyword = binding.etText.text?.toString() ?: "", reload = true)
+                                )
+                            }
+                        }
                     } catch (e: Exception) {
 
                     } finally {
@@ -123,6 +150,60 @@ class CharacterListFragment : Fragment() {
                     }
                 }
             }
+
+            etText.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {
+                    // 텍스트 변경 전
+                }
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    // 텍스트 변경 중
+                }
+
+                override fun afterTextChanged(s: Editable?) {
+
+
+                    // 텍스트 변경 후
+                    if (s.isNullOrBlank()) {
+                        // 텍스트 X
+
+                        characterViewModel.viewState.value.keyword?.let {
+                            characterViewModel.clearViewState()
+                        }
+
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            if (characterViewModel.viewState.value.characters.isEmpty()) {
+                                characterViewModel.loadCharacters(charactersLoadForm = CharactersLoadForm(reload = true))
+                            }
+                        }
+
+                    } else {
+                        // 텍스트 O
+                        characterViewModel.viewState.value.keyword?.let {
+                            if(it != s.toString()) {
+                                characterViewModel.clearViewState()
+                            }
+                        } ?: run {
+                            characterViewModel.clearViewState()
+                        }
+
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            if (characterViewModel.viewState.value.characters.isEmpty()) {
+                                characterViewModel.searchCharacters(charactersSearchForm = CharactersSearchForm(
+                                    keyword = s.toString(),
+                                    reload = true
+                                ))
+                            }
+                        }
+                    }
+                }
+            })
+
         }
 
         // ViewModel에 데이터가 없을 때만 초기 로드
@@ -171,13 +252,15 @@ class CharacterListFragment : Fragment() {
 }
 
 class CharacterViewModelFactory(
-    private val loadCharactersUseCase: LoadCharactersUseCase
+    private val loadCharactersUseCase: LoadCharactersUseCase,
+    private val searchCharactersUseCase: SearchCharactersUseCase
 
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return CharacterViewModel(
-            loadCharactersUseCase = loadCharactersUseCase
+            loadCharactersUseCase = loadCharactersUseCase,
+            searchCharactersUseCase = searchCharactersUseCase
         ) as T
     }
 }
