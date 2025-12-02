@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("kotlin-kapt")
 }
 
 android {
@@ -68,4 +69,8 @@ dependencies {
 
     // Glide (이미지 로딩)
     implementation("com.github.bumptech.glide:glide:4.16.0")
+
+    // Dagger2 (의존성 주입)
+    implementation(libs.dagger)
+    kapt(libs.dagger.compiler)
 }
