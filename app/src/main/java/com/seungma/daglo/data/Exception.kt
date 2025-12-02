@@ -10,5 +10,7 @@ class LoadCharactersException(
     val _message: String
 ) : Exception(_message)
 
-
+class SearchCharactersException(
+    val _message: String
+) : Exception(_message)
 

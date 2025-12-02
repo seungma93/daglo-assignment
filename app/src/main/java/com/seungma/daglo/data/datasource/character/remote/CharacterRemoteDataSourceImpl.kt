@@ -6,13 +6,19 @@ import com.seungma.daglo.data.model.response.PagedResponse
 import com.seungma.daglo.network.retrofit.RetrofitClient
 import com.seungma.daglo.network.retrofit.service.RickAndMortyService
 import androidx.core.net.toUri
+import com.seungma.daglo.data.model.request.CharactersSearchRequest
 
 class CharacterRemoteDataSourceImpl(private val retrofitClient: RetrofitClient) :
     CharacterDataSource {
     private val characterService = retrofitClient.retrofit.create(RickAndMortyService::class.java)
     private var loadIndex: Int? = null
+    private var searchIndex: Int? = null
 
     override suspend fun loadCharacters(charactersLoadRequest: CharactersLoadRequest): PagedResponse {
+
+        searchIndex?.let {
+            searchIndex = null
+        }
 
         val response = characterService.getCharacters(
             page = when (charactersLoadRequest.reload) {
@@ -29,6 +35,29 @@ class CharacterRemoteDataSourceImpl(private val retrofitClient: RetrofitClient) 
         loadIndex = parseNextPage(nextUrl = response.info?.next)
 
         return response
+    }
+
+    override suspend fun searchCharacters(charactersSearchRequest: CharactersSearchRequest): PagedResponse {
+
+        loadIndex?.let {
+            loadIndex = null
+        }
+
+        val response = characterService.getCharacters(
+            page = when (charactersSearchRequest.reload) {
+                true -> null
+                false -> searchIndex
+            },
+            name = charactersSearchRequest.keyword,
+            status = null,
+            species = null,
+            type = null,
+            gender = null
+        )
+
+        searchIndex = parseNextPage(nextUrl = response.info?.next)
+
+        return  response
     }
 
     private fun parseNextPage(nextUrl: String?): Int? {
