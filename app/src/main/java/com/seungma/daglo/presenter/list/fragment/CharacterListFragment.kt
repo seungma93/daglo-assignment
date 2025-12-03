@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,9 +12,11 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
 import com.seungma.daglo.DagloApplication
 import com.seungma.daglo.databinding.FragmentCharacterListBinding
 import com.seungma.daglo.domain.list.entity.CharacterItemKeyEntity
+import com.seungma.daglo.presenter.CustomSnackbar
 import com.seungma.daglo.presenter.EndPoint
 import com.seungma.daglo.presenter.Navigable
 import com.seungma.daglo.presenter.list.CharactersListAdapter
@@ -239,14 +240,24 @@ class CharacterListFragment : Fragment() {
 
     private suspend fun subscribe() {
         characterViewModel.viewState.collect {
-            Log.d("seungma", "콜렉트" + it.characters)
-            val layoutManager = binding.rvCharacterList.layoutManager as? LinearLayoutManager
-            
-            adapter.submitList(it.characters) {
-                // 리스트 업데이트 후 스크롤 위치 복원
-                if (scrollPosition > 0 && scrollPosition < it.characters.size) {
-                    layoutManager?.scrollToPosition(scrollPosition)
-                    scrollPosition = 0 // 복원 후 초기화
+
+            it.errorMessage?.let {
+                val message = it
+                val duration = Snackbar.LENGTH_SHORT
+
+                val snackbar = CustomSnackbar.make(requireView(), message, duration)
+                snackbar.setMargin(bottomDp = 66)
+                snackbar.show()
+
+            } ?: run {
+                val layoutManager = binding.rvCharacterList.layoutManager as? LinearLayoutManager
+
+                adapter.submitList(it.characters) {
+                    // 리스트 업데이트 후 스크롤 위치 복원
+                    if (scrollPosition > 0 && scrollPosition < it.characters.size) {
+                        layoutManager?.scrollToPosition(scrollPosition)
+                        scrollPosition = 0 // 복원 후 초기화
+                    }
                 }
             }
         }

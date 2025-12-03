@@ -17,14 +17,15 @@ class CharacterViewModel (
 ) : ViewModel() {
 
     private val _viewState =
-        MutableStateFlow(CharacterViewState(characters = emptyList(), isLast = false, isLoading = false, keyword = null))
+        MutableStateFlow(CharacterViewState(characters = emptyList(), isLast = false, isLoading = false, keyword = null, errorMessage = null))
     val viewState: StateFlow<CharacterViewState> = _viewState.asStateFlow()
 
     data class CharacterViewState(
         val characters: List<CharacterEntity>,
         val isLast: Boolean,
         val isLoading: Boolean,
-        val keyword: String?
+        val keyword: String?,
+        val errorMessage: String?
     )
 
 
@@ -33,7 +34,7 @@ class CharacterViewModel (
         if (_viewState.value.isLoading) return
         
         _viewState.update { current ->
-            current.copy(isLoading = true, keyword = null)
+            current.copy(isLoading = true, keyword = null, errorMessage = null)
         }
         
         runCatching {
@@ -50,13 +51,14 @@ class CharacterViewModel (
                     characters = result,
                     isLast = newCharacters.isLast,
                     isLoading = false,
-                    keyword = null
+                    keyword = null,
+                    errorMessage = null
                 )
             }
 
         }.onFailure {
             _viewState.update { current ->
-                current.copy(isLoading = false, keyword = null)
+                current.copy(isLoading = false, keyword = null, errorMessage = it.message)
             }
         }.getOrNull()
     }
@@ -67,7 +69,7 @@ class CharacterViewModel (
         if (_viewState.value.isLoading) return
 
         _viewState.update { current ->
-            current.copy(isLoading = true, keyword = charactersSearchForm.keyword)
+            current.copy(isLoading = true, keyword = charactersSearchForm.keyword, errorMessage = null)
         }
 
         runCatching {
@@ -84,13 +86,14 @@ class CharacterViewModel (
                     characters = result,
                     isLast = newCharacters.isLast,
                     isLoading = false,
-                    keyword = charactersSearchForm.keyword
+                    keyword = charactersSearchForm.keyword,
+                    errorMessage = null
                 )
             }
 
         }.onFailure {
             _viewState.update { current ->
-                current.copy(isLoading = false, keyword = charactersSearchForm.keyword)
+                current.copy(isLoading = false, keyword = charactersSearchForm.keyword, errorMessage = it.message)
             }
         }.getOrNull()
     }
@@ -98,7 +101,7 @@ class CharacterViewModel (
     fun clearViewState() {
         _viewState.update {
             CharacterViewState(
-                characters = emptyList(), isLast = false, isLoading = false, keyword = null)
+                characters = emptyList(), isLast = false, isLoading = false, keyword = null, errorMessage = null)
         }
     }
 
