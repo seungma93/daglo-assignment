@@ -6,5 +6,4 @@ import com.seungma.daglo.data.model.response.PagedResponse
 
 interface CharacterDataSource {
     suspend fun loadCharacters(charactersLoadRequest: CharactersLoadRequest): PagedResponse
-    suspend fun searchCharacters(charactersSearchRequest: CharactersSearchRequest): PagedResponse
 }
