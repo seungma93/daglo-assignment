@@ -23,6 +23,11 @@ import com.seungma.daglo.presenter.list.form.CharactersLoadForm
 import com.seungma.daglo.presenter.list.form.CharactersSearchForm
 import com.seungma.daglo.presenter.list.viewmodel.CharacterViewModel
 import com.seungma.daglo.presenter.list.viewmodel.ViewModelFactory
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,6 +41,12 @@ class CharacterListFragment : Fragment() {
     private var _adapter: CharactersListAdapter? = null
     private val adapter get() = _adapter!!
     private var scrollPosition = 0
+    
+    // 검색어 입력 이벤트를 SharedFlow로 관리
+    private val searchQueryFlow = MutableSharedFlow<String>(
+        replay = 0, // 이벤트는 재생하지 않음
+        extraBufferCapacity = 1 // 버퍼 크기
+    )
 
     private val onScrollListener = object : RecyclerView.OnScrollListener() {
         override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -112,6 +123,44 @@ class CharacterListFragment : Fragment() {
             rvCharacterList.adapter = adapter
             rvCharacterList.addOnScrollListener(onScrollListener)
 
+            // SharedFlow를 사용한 debounce 검색
+            searchQueryFlow
+                .debounce(500) // 500ms 대기
+                .distinctUntilChanged() // 같은 값이면 무시
+                .onEach { query ->
+                    if (query.isBlank()) {
+                        // 텍스트 X
+                        characterViewModel.viewState.value.keyword?.let {
+                            characterViewModel.clearViewState()
+                        }
+
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            if (characterViewModel.viewState.value.characters.isEmpty()) {
+                                characterViewModel.loadCharacters(charactersLoadForm = CharactersLoadForm(reload = true))
+                            }
+                        }
+                    } else {
+                        // 텍스트 O
+                        characterViewModel.viewState.value.keyword?.let {
+                            if(it != query) {
+                                characterViewModel.clearViewState()
+                            }
+                        } ?: run {
+                            characterViewModel.clearViewState()
+                        }
+
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            if (characterViewModel.viewState.value.characters.isEmpty()) {
+                                characterViewModel.searchCharacters(charactersSearchForm = CharactersSearchForm(
+                                    keyword = query,
+                                    reload = true
+                                ))
+                            }
+                        }
+                    }
+                }
+                .launchIn(viewLifecycleOwner.lifecycleScope)
+
             swipeRefreshLayout.setOnRefreshListener {
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
@@ -151,40 +200,9 @@ class CharacterListFragment : Fragment() {
                 }
 
                 override fun afterTextChanged(s: Editable?) {
-
-
-                    // 텍스트 변경 후
-                    if (s.isNullOrBlank()) {
-                        // 텍스트 X
-
-                        characterViewModel.viewState.value.keyword?.let {
-                            characterViewModel.clearViewState()
-                        }
-
-                        viewLifecycleOwner.lifecycleScope.launch {
-                            if (characterViewModel.viewState.value.characters.isEmpty()) {
-                                characterViewModel.loadCharacters(charactersLoadForm = CharactersLoadForm(reload = true))
-                            }
-                        }
-
-                    } else {
-                        // 텍스트 O
-                        characterViewModel.viewState.value.keyword?.let {
-                            if(it != s.toString()) {
-                                characterViewModel.clearViewState()
-                            }
-                        } ?: run {
-                            characterViewModel.clearViewState()
-                        }
-
-                        viewLifecycleOwner.lifecycleScope.launch {
-                            if (characterViewModel.viewState.value.characters.isEmpty()) {
-                                characterViewModel.searchCharacters(charactersSearchForm = CharactersSearchForm(
-                                    keyword = s.toString(),
-                                    reload = true
-                                ))
-                            }
-                        }
+                    // SharedFlow에 이벤트 방출 (debounce는 위에서 처리)
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        searchQueryFlow.emit(s?.toString() ?: "")
                     }
                 }
             })
