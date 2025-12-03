@@ -3,14 +3,18 @@ package com.seungma.daglo.data.datasource.character.remote
 import com.seungma.daglo.data.datasource.character.CharacterDataSource
 import com.seungma.daglo.data.model.request.CharactersLoadRequest
 import com.seungma.daglo.data.model.response.PagedResponse
-import com.seungma.daglo.network.retrofit.RetrofitClient
 import com.seungma.daglo.network.retrofit.service.RickAndMortyService
 import androidx.core.net.toUri
 import com.seungma.daglo.data.model.request.CharactersSearchRequest
+import retrofit2.Retrofit
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class CharacterRemoteDataSourceImpl(private val retrofitClient: RetrofitClient) :
-    CharacterDataSource {
-    private val characterService = retrofitClient.retrofit.create(RickAndMortyService::class.java)
+@Singleton
+class CharacterRemoteDataSourceImpl @Inject constructor(
+    retrofit: Retrofit
+) : CharacterDataSource {
+    private val characterService = retrofit.create(RickAndMortyService::class.java)
     private var loadIndex: Int? = null
     private var searchIndex: Int? = null
 

@@ -10,9 +10,13 @@ import com.seungma.daglo.domain.list.entity.CharactersSearchEntity
 import com.seungma.daglo.domain.list.repository.CharacterDataRepository
 import com.seungma.daglo.presenter.list.form.CharactersLoadForm
 import com.seungma.daglo.presenter.list.form.CharactersSearchForm
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class CharacterDataRepositoryImpl(private val characterDatasource: CharacterDataSource) :
-    CharacterDataRepository {
+@Singleton
+class CharacterDataRepositoryImpl @Inject constructor(
+    private val characterDatasource: CharacterDataSource
+) : CharacterDataRepository {
 
     override suspend fun loadCharacters(charactersLoadForm: CharactersLoadForm): CharactersLoadEntity {
         return characterDatasource.loadCharacters(
