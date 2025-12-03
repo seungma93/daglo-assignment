@@ -54,6 +54,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
     implementation("androidx.activity:activity-ktx:1.9.0") // by viewModels() 사용을 위해 추가
+    implementation("androidx.fragment:fragment-ktx:1.6.2") // Fragment의 viewModels() 사용을 위해 추가
 
     // Coroutines (코루틴)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
