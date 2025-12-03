@@ -5,28 +5,17 @@ import com.seungma.daglo.data.model.response.LocationResponse
 import com.seungma.daglo.data.model.response.PagedResponse
 import com.seungma.daglo.domain.list.entity.CharacterEntity
 import com.seungma.daglo.domain.list.entity.CharactersLoadEntity
-import com.seungma.daglo.domain.list.entity.CharactersSearchEntity
 import com.seungma.daglo.domain.list.entity.LocationEntity
 
 
-fun PagedResponse.toLoadEntity(): CharactersLoadEntity {
+fun PagedResponse.toEntity(): CharactersLoadEntity {
     return CharactersLoadEntity(
         characters = results?.map {
             it.toEntity()
         } ?: emptyList(),
-        isLast = info?.next == null
+        nextPage = info?.next
     )
 }
-
-fun PagedResponse.toSearchEntity(): CharactersSearchEntity {
-    return CharactersSearchEntity(
-        characters = results?.map {
-            it.toEntity()
-        } ?: emptyList(),
-        isLast = info?.next == null
-    )
-}
-
 
 fun CharacterResponse.toEntity(): CharacterEntity {
     val locationEntity = location?.toEntity() ?: LocationEntity(name = "", url = "")

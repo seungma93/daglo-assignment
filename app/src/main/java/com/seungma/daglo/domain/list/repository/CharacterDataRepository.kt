@@ -6,7 +6,5 @@ import com.seungma.daglo.presenter.list.form.CharactersLoadForm
 import com.seungma.daglo.presenter.list.form.CharactersSearchForm
 
 interface CharacterDataRepository {
-
     suspend fun loadCharacters(charactersLoadForm: CharactersLoadForm): CharactersLoadEntity
-    suspend fun searchCharacters(charactersSearchForm: CharactersSearchForm): CharactersSearchEntity
 }

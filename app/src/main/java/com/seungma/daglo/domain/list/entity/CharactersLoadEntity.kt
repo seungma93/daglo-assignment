@@ -6,5 +6,5 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class CharactersLoadEntity (
     val characters: List<CharacterEntity>,
-    val isLast: Boolean
+    val nextPage: String?
 ): Parcelable

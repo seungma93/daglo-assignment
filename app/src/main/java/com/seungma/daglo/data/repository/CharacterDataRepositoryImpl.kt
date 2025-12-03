@@ -1,19 +1,13 @@
 package com.seungma.daglo.data.repository
 
 import com.seungma.daglo.data.datasource.character.CharacterDataSource
-import com.seungma.daglo.data.mapper.toLoadEntity
-import com.seungma.daglo.data.mapper.toSearchEntity
+import com.seungma.daglo.data.mapper.toEntity
 import com.seungma.daglo.data.model.request.CharactersLoadRequest
-import com.seungma.daglo.data.model.request.CharactersSearchRequest
 import com.seungma.daglo.domain.list.entity.CharactersLoadEntity
-import com.seungma.daglo.domain.list.entity.CharactersSearchEntity
 import com.seungma.daglo.domain.list.repository.CharacterDataRepository
 import com.seungma.daglo.presenter.list.form.CharactersLoadForm
-import com.seungma.daglo.presenter.list.form.CharactersSearchForm
 import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
 class CharacterDataRepositoryImpl @Inject constructor(
     private val characterDatasource: CharacterDataSource
 ) : CharacterDataRepository {
@@ -21,18 +15,10 @@ class CharacterDataRepositoryImpl @Inject constructor(
     override suspend fun loadCharacters(charactersLoadForm: CharactersLoadForm): CharactersLoadEntity {
         return characterDatasource.loadCharacters(
             charactersLoadRequest = CharactersLoadRequest(
-                reload = charactersLoadForm.reload
+                page = charactersLoadForm.page,
+                keyword = charactersLoadForm.keyword
             )
-        ).toLoadEntity()
-    }
-
-    override suspend fun searchCharacters(charactersSearchForm: CharactersSearchForm): CharactersSearchEntity {
-        return characterDatasource.searchCharacters(
-            charactersSearchRequest = CharactersSearchRequest(
-                keyword = charactersSearchForm.keyword,
-                reload = charactersSearchForm.reload
-            )
-        ).toSearchEntity()
+        ).toEntity()
     }
 
 }
