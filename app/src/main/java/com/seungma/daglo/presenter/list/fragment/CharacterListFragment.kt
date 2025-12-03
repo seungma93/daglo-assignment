@@ -1,5 +1,6 @@
 package com.seungma.daglo.presenter.list.fragment
 
+import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -8,27 +9,28 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.seungma.daglo.data.datasource.character.remote.CharacterRemoteDataSourceImpl
-import com.seungma.daglo.data.repository.CharacterDataRepositoryImpl
+import com.seungma.daglo.DagloApplication
 import com.seungma.daglo.databinding.FragmentCharacterListBinding
 import com.seungma.daglo.domain.list.entity.CharacterItemKeyEntity
-import com.seungma.daglo.domain.list.usecase.LoadCharactersUseCase
-import com.seungma.daglo.domain.list.usecase.SearchCharactersUseCase
-import com.seungma.daglo.network.retrofit.RetrofitClient
 import com.seungma.daglo.presenter.EndPoint
 import com.seungma.daglo.presenter.Navigable
 import com.seungma.daglo.presenter.list.CharactersListAdapter
 import com.seungma.daglo.presenter.list.form.CharactersLoadForm
 import com.seungma.daglo.presenter.list.form.CharactersSearchForm
 import com.seungma.daglo.presenter.list.viewmodel.CharacterViewModel
+import com.seungma.daglo.presenter.list.viewmodel.ViewModelFactory
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 class CharacterListFragment : Fragment() {
+    @Inject
+    lateinit var viewModelFactory: ViewModelFactory
+    private val characterViewModel: CharacterViewModel by viewModels { viewModelFactory }
+
     private var _binding: FragmentCharacterListBinding? = null
     private val binding get() = _binding!!
     private var _adapter: CharactersListAdapter? = null
@@ -71,29 +73,12 @@ class CharacterListFragment : Fragment() {
         }
     }
 
-    private val characterViewModel: CharacterViewModel by lazy {
-        // dataSource
-        val characterDataSourceImpl = CharacterRemoteDataSourceImpl(
-            retrofitClient = RetrofitClient
-        )
-        // repository
-        val characterDataRepositoryImpl = CharacterDataRepositoryImpl(
-            characterDatasource = characterDataSourceImpl
-        )
-        // useCase
-        val loadCharactersUseCase =
-            LoadCharactersUseCase(characterDataRepository = characterDataRepositoryImpl)
-        val searchCharactersUseCase = SearchCharactersUseCase(characterDataRepository = characterDataRepositoryImpl)
-
-        // factory
-        val factory = CharacterViewModelFactory(
-            loadCharactersUseCase = loadCharactersUseCase,
-            searchCharactersUseCase = searchCharactersUseCase
-        )
-
-        ViewModelProvider(this, factory).get(CharacterViewModel::class.java)
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        (requireActivity().application as DagloApplication)
+            .appComponent
+            .inject(this)
     }
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -249,18 +234,4 @@ class CharacterListFragment : Fragment() {
         }
     }
 
-}
-
-class CharacterViewModelFactory(
-    private val loadCharactersUseCase: LoadCharactersUseCase,
-    private val searchCharactersUseCase: SearchCharactersUseCase
-
-) : ViewModelProvider.Factory {
-
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return CharacterViewModel(
-            loadCharactersUseCase = loadCharactersUseCase,
-            searchCharactersUseCase = searchCharactersUseCase
-        ) as T
-    }
 }

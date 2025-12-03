@@ -4,8 +4,13 @@ import com.seungma.daglo.data.SearchCharactersException
 import com.seungma.daglo.domain.list.entity.CharactersSearchEntity
 import com.seungma.daglo.domain.list.repository.CharacterDataRepository
 import com.seungma.daglo.presenter.list.form.CharactersSearchForm
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class SearchCharactersUseCase(private val characterDataRepository: CharacterDataRepository) {
+@Singleton
+class SearchCharactersUseCase @Inject constructor(
+    private val characterDataRepository: CharacterDataRepository
+) {
     suspend operator fun invoke(charactersSearchForm: CharactersSearchForm): CharactersSearchEntity {
         return runCatching {
             characterDataRepository.searchCharacters(charactersSearchForm = charactersSearchForm)
