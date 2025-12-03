@@ -14,3 +14,9 @@ class SearchCharactersException(
     val _message: String
 ) : Exception(_message)
 
+class HttpErrorException(
+    val code: Int,
+    val errorMessage: String,
+    val errorBody: String?
+) : java.io.IOException("HTTP $code: $errorMessage")
+
