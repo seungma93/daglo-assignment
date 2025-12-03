@@ -36,9 +36,9 @@ class MainActivity() : AppCompatActivity(), Navigable {
         _binding = null
     }
 
-    private fun setFragment(fragment: Fragment, viewId: Int, backStackToken: Boolean) {
+    private fun setFragment(fragment: Fragment, viewId: Int, useBackStack: Boolean) {
         val transaction = supportFragmentManager.beginTransaction()
-        when (backStackToken) {
+        when (useBackStack) {
             true -> {
                 transaction.replace(viewId, fragment)
                     .addToBackStack(null)
