@@ -15,17 +15,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import javax.inject.Inject
 
 sealed class CharacterInfoViewEvent{
-    data class Error(private val message: String): CharacterInfoViewEvent()
+    data class Error(val message: String): CharacterInfoViewEvent()
 }
 
-class CharacterInfoViewModel(
+class CharacterInfoViewModel @Inject constructor(
     private val loadCharacterUseCase: LoadCharacterUseCase
 ) : ViewModel() {
 
     data class CharacterInfoViewState(
-        val character: CharacterEntity?
+        val character: CharacterEntity
     )
 
     private val _viewState =
@@ -46,7 +47,7 @@ class CharacterInfoViewModel(
     val viewState: StateFlow<CharacterInfoViewState> = _viewState.asStateFlow()
 
     private val _viewEvent = MutableSharedFlow<CharacterInfoViewEvent>()
-    private val viewEvent: SharedFlow<CharacterInfoViewEvent> = _viewEvent.asSharedFlow()
+    val viewEvent: SharedFlow<CharacterInfoViewEvent> = _viewEvent.asSharedFlow()
 
 
 

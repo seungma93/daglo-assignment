@@ -1,6 +1,5 @@
 package com.seungma.daglo.presenter.list.viewmodel
 
-import android.util.Log
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -20,13 +19,14 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import javax.inject.Inject
 
 sealed class CharacterViewEvent{
     data class Error(val message: String): CharacterViewEvent()
     data class Scroll(val scrollToTop: Boolean): CharacterViewEvent()
 }
 
-class CharacterViewModel(
+class CharacterViewModel @Inject constructor(
     private val loadCharactersUseCase: LoadCharactersUseCase
 ) : ViewModel() {
 

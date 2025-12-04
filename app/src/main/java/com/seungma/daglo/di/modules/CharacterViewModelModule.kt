@@ -9,7 +9,7 @@ import dagger.Provides
 import dagger.multibindings.IntoMap
 
 @Module
-class ViewModelModule {
+class CharacterViewModelModule {
 
     @Provides
     @IntoMap

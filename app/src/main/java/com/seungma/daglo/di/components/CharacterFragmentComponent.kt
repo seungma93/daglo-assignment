@@ -1,10 +1,10 @@
 package com.seungma.daglo.di.components
 
+import com.seungma.daglo.di.modules.CharacterInfoViewModelModule
 import com.seungma.daglo.di.modules.DataSourceModule
 import com.seungma.daglo.di.modules.NetworkModule
 import com.seungma.daglo.di.modules.RepositoryModule
-import com.seungma.daglo.di.modules.CharacterViewModelModule
-import com.seungma.daglo.presenter.list.fragment.CharacterListFragment
+import com.seungma.daglo.presenter.list.fragment.CharacterFragment
 import dagger.Component
 import javax.inject.Singleton
 
@@ -14,9 +14,9 @@ import javax.inject.Singleton
         NetworkModule::class,
         DataSourceModule::class,
         RepositoryModule::class,
-        CharacterViewModelModule::class
+        CharacterInfoViewModelModule::class
     ]
 )
-interface CharacterListFragmentComponent {
-    fun inject(fragment: CharacterListFragment)
+interface CharacterFragmentComponent {
+    fun inject(fragment: CharacterFragment)
 }

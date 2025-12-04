@@ -11,7 +11,7 @@ import com.seungma.daglo.presenter.list.fragment.CharacterListFragment
 
 sealed class EndPoint {
     object CharacterList : EndPoint()
-    data class CharacterItem(val characterItemKeyEntity: CharacterItemKeyEntity) : EndPoint()
+    data class CharacterInfo(val characterItemKeyEntity: CharacterItemKeyEntity) : EndPoint()
     object Error : EndPoint()
 }
 
@@ -60,7 +60,7 @@ class MainActivity() : AppCompatActivity(), Navigable {
                 setFragment(fragment, R.id.activity_frame_layout, false)
             }
 
-            is EndPoint.CharacterItem -> {
+            is EndPoint.CharacterInfo -> {
                 val fragment = CharacterFragment.newInstance(characterItemKeyEntity = endPoint.characterItemKeyEntity)
                 setFragment(fragment, R.id.activity_frame_layout, true)
             }

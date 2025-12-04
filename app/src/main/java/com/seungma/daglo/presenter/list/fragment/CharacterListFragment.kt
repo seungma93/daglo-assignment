@@ -100,9 +100,9 @@ class CharacterListFragment : Fragment() {
 
         _adapter = CharactersListAdapter(
             itemClick = {
-                val endPoint = EndPoint.CharacterItem(
+                val endPoint = EndPoint.CharacterInfo(
                     characterItemKeyEntity = CharacterItemKeyEntity(
-                        characterEntity = it
+                        characterId = it.id
                     )
                 )
                 (requireActivity() as? Navigable)?.navigateFragment(endPoint)
