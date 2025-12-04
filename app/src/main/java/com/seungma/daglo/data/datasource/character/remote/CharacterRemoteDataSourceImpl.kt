@@ -1,14 +1,13 @@
 package com.seungma.daglo.data.datasource.character.remote
 
 import com.seungma.daglo.data.datasource.character.CharacterDataSource
+import com.seungma.daglo.data.model.request.CharacterLoadRequest
 import com.seungma.daglo.data.model.request.CharactersLoadRequest
+import com.seungma.daglo.data.model.response.CharacterResponse
 import com.seungma.daglo.data.model.response.PagedResponse
 import com.seungma.daglo.network.retrofit.service.RickAndMortyService
-import androidx.core.net.toUri
-import com.seungma.daglo.data.model.request.CharactersSearchRequest
 import retrofit2.Retrofit
 import javax.inject.Inject
-import javax.inject.Singleton
 
 class CharacterRemoteDataSourceImpl @Inject constructor(
     retrofit: Retrofit
@@ -24,6 +23,12 @@ class CharacterRemoteDataSourceImpl @Inject constructor(
             species = null,
             type = null,
             gender = null
+        )
+    }
+
+    override suspend fun loadCharacter(loadCharacterRequest: CharacterLoadRequest): CharacterResponse {
+        return characterService.getCharacter(
+            id = loadCharacterRequest.id
         )
     }
 
