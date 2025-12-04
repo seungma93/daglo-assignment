@@ -1,7 +1,9 @@
 package com.seungma.daglo.domain.list.entity
 
-import java.io.Serializable
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class CharacterEntity (
     val id: Int,
     val image: String,
@@ -11,4 +13,4 @@ data class CharacterEntity (
     val species: String,
     val orgin: LocationEntity,
     val location: LocationEntity
-): Serializable
+): Parcelable

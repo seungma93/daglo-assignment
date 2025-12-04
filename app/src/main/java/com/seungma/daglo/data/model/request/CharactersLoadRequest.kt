@@ -1,5 +1,6 @@
 package com.seungma.daglo.data.model.request
 
 data class CharactersLoadRequest (
-    val reload: Boolean
+    val keyword: String?,
+    val page: Int
 )
