@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("kotlin-kapt")
+    id("kotlin-parcelize")
 }
 
 android {
@@ -22,7 +23,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -36,7 +37,7 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-    // 뷰 바인딩
+
     buildFeatures {
         viewBinding = true
     }
@@ -63,8 +64,8 @@ dependencies {
     // ViewModel & Lifecycle (라이프사이클 스코프 포함)
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
-    implementation("androidx.activity:activity-ktx:1.9.0") // by viewModels() 사용을 위해 추가
-    implementation("androidx.fragment:fragment-ktx:1.6.2") // Fragment의 viewModels() 사용을 위해 추가
+    implementation("androidx.activity:activity-ktx:1.9.0")
+    implementation("androidx.fragment:fragment-ktx:1.6.2")
 
     // Coroutines (코루틴)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
@@ -72,8 +73,8 @@ dependencies {
 
     // Retrofit (레트로핏2)
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.11.0") // Gson 컨버터
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0") // 통신
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     // Swipe (스와이프 리프레시)
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
@@ -81,7 +82,7 @@ dependencies {
     // Glide (이미지 로딩)
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
-    // Dagger2 (의존성 주입)
+    // Dagger2
     implementation(libs.dagger)
     kapt(libs.dagger.compiler)
 }
