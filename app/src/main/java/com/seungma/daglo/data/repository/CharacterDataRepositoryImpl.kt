@@ -16,7 +16,7 @@ class CharacterDataRepositoryImpl @Inject constructor(
         return characterDatasource.loadCharacters(
             charactersLoadRequest = CharactersLoadRequest(
                 page = charactersLoadForm.page,
-                keyword = charactersLoadForm.keyword
+                keyword = charactersLoadForm.keyword.ifEmpty { null }
             )
         ).toEntity()
     }

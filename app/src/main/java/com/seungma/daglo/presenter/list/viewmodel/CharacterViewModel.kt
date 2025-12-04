@@ -1,109 +1,153 @@
 package com.seungma.daglo.presenter.list.viewmodel
 
+import android.util.Log
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.seungma.daglo.domain.list.entity.CharacterEntity
 import com.seungma.daglo.domain.list.usecase.LoadCharactersUseCase
-import com.seungma.daglo.domain.list.usecase.SearchCharactersUseCase
 import com.seungma.daglo.presenter.list.form.CharactersLoadForm
-import com.seungma.daglo.presenter.list.form.CharactersSearchForm
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
-class CharacterViewModel (
-    private val loadCharactersUseCase: LoadCharactersUseCase,
-    private val searchCharactersUseCase: SearchCharactersUseCase
+sealed class CharacterViewEvent{
+    data class Error(val message: String): CharacterViewEvent()
+    data class Scroll(val scrollToTop: Boolean): CharacterViewEvent()
+}
+
+class CharacterViewModel(
+    private val loadCharactersUseCase: LoadCharactersUseCase
 ) : ViewModel() {
 
     private val _viewState =
-        MutableStateFlow(CharacterViewState(characters = emptyList(), isLast = false, isLoading = false, keyword = null, errorMessage = null))
+        MutableStateFlow(
+            CharacterViewState(
+                characters = emptyList(),
+                nextPage = null,
+                isLoading = false,
+                keyword = ""
+            )
+        )
     val viewState: StateFlow<CharacterViewState> = _viewState.asStateFlow()
+
+    private val _viewEvent = MutableSharedFlow<CharacterViewEvent>()
+    val viewEvent: SharedFlow<CharacterViewEvent> = _viewEvent.asSharedFlow()
+
+    private val producer = Channel<String>()
+    private val consumer = producer
+        .consumeAsFlow()
+        .distinctUntilChanged()
+        .debounce(400)
+
+
+    init {
+        viewModelScope.launch {
+            consumer.collect {
+                loadCharacters(
+                    charactersLoadForm = CharactersLoadForm(
+                        page = viewState.value.nextPage ?: 1, keyword = it
+                    )
+                )
+            }
+        }
+    }
 
     data class CharacterViewState(
         val characters: List<CharacterEntity>,
-        val isLast: Boolean,
+        val nextPage: Int?,
         val isLoading: Boolean,
-        val keyword: String?,
-        val errorMessage: String?
+        val keyword: String,
     )
 
-
-    suspend fun loadCharacters(charactersLoadForm: CharactersLoadForm) {
-        // 이미 로딩 중이면 중복 호출 방지
-        if (_viewState.value.isLoading) return
-        
-        _viewState.update { current ->
-            current.copy(isLoading = true, keyword = null, errorMessage = null)
-        }
-        
-        runCatching {
-            val existingCharacters = viewState.value.characters
-            val newCharacters = loadCharactersUseCase(charactersLoadForm = charactersLoadForm)
-
-            val result = when (charactersLoadForm.reload) {
-                true -> newCharacters.characters
-                false -> existingCharacters + newCharacters.characters
-            }
-
-            _viewState.update { current ->
-                current.copy(
-                    characters = result,
-                    isLast = newCharacters.isLast,
-                    isLoading = false,
-                    keyword = null,
-                    errorMessage = null
-                )
-            }
-
-        }.onFailure {
-            _viewState.update { current ->
-                current.copy(isLoading = false, keyword = null, errorMessage = it.message)
-            }
-        }.getOrNull()
-    }
-
-    suspend fun searchCharacters(charactersSearchForm: CharactersSearchForm) {
-
-        // 이미 로딩 중이면 중복 호출 방지
-        if (_viewState.value.isLoading) return
-
-        _viewState.update { current ->
-            current.copy(isLoading = true, keyword = charactersSearchForm.keyword, errorMessage = null)
-        }
-
-        runCatching {
-            val existingCharacters = viewState.value.characters
-            val newCharacters = searchCharactersUseCase(charactersSearchForm = charactersSearchForm)
-
-            val result = when (charactersSearchForm.reload) {
-                true -> newCharacters.characters
-                false -> existingCharacters + newCharacters.characters
-            }
-
-            _viewState.update { current ->
-                current.copy(
-                    characters = result,
-                    isLast = newCharacters.isLast,
-                    isLoading = false,
-                    keyword = charactersSearchForm.keyword,
-                    errorMessage = null
-                )
-            }
-
-        }.onFailure {
-            _viewState.update { current ->
-                current.copy(isLoading = false, keyword = charactersSearchForm.keyword, errorMessage = it.message)
-            }
-        }.getOrNull()
-    }
-
-    fun clearViewState() {
-        _viewState.update {
-            CharacterViewState(
-                characters = emptyList(), isLast = false, isLoading = false, keyword = null, errorMessage = null)
+    fun sendQuery(query: String) {
+        viewModelScope.launch {
+            producer.send(query)
         }
     }
 
+    fun loadCharacters(charactersLoadForm: CharactersLoadForm) {
+        if(viewState.value.isLoading) return
 
+        viewModelScope.launch {
+
+            _viewState.update { it.copy(isLoading = true) }
+
+            when (viewState.value.keyword == charactersLoadForm.keyword) {
+
+                true -> {
+                    runCatching {
+                        val charactersLoadEntity =
+                            loadCharactersUseCase(charactersLoadForm = charactersLoadForm)
+
+                        val characters = charactersLoadEntity.characters
+                        val nextPage = parseNextPage(nextUrl = charactersLoadEntity.nextPage)
+
+                        _viewState.update { current ->
+                            current.copy(
+                                characters = if (charactersLoadForm.page == 1) characters else current.characters + characters,
+                                nextPage = nextPage,
+                                isLoading = false,
+                                keyword = charactersLoadForm.keyword
+                            )
+                        }
+
+                        if(charactersLoadForm.page == 1) {
+                            _viewEvent.emit(CharacterViewEvent.Scroll(scrollToTop = true))
+                        }
+
+                    }.onFailure {
+                        _viewState.update { it.copy(isLoading = false) }
+                    }
+                }
+
+                false -> {
+                    runCatching {
+                        val charactersLoadEntity =
+                            loadCharactersUseCase(charactersLoadForm = charactersLoadForm.copy(page = 1))
+
+                        val characters = charactersLoadEntity.characters
+                        val nextPage = parseNextPage(nextUrl = charactersLoadEntity.nextPage)
+                        _viewState.update { current ->
+                            current.copy(
+                                characters = characters,
+                                nextPage = nextPage,
+                                isLoading = false,
+                                keyword = charactersLoadForm.keyword
+                            )
+                        }
+                        _viewEvent.emit(CharacterViewEvent.Scroll(scrollToTop = true))
+                    }.onFailure {
+                        _viewState.update { it.copy(isLoading = false) }
+                        when(it) {
+                            is HttpException -> {
+                                when(it.code()) {
+                                    404 -> _viewEvent.emit(CharacterViewEvent.Error(message = "검색 결과가 없습니다"))
+                                }
+                            }
+                        }
+                    }
+
+                }
+
+            }
+
+        }
+    }
+
+    private fun parseNextPage(nextUrl: String?): Int? {
+        return nextUrl?.let {
+            it.toUri().getQueryParameter("page")?.toInt()
+        }
+    }
 }

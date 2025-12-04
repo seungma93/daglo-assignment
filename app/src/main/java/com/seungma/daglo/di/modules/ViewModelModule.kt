@@ -2,7 +2,6 @@ package com.seungma.daglo.di.modules
 
 import androidx.lifecycle.ViewModel
 import com.seungma.daglo.domain.list.usecase.LoadCharactersUseCase
-import com.seungma.daglo.domain.list.usecase.SearchCharactersUseCase
 import com.seungma.daglo.presenter.list.viewmodel.CharacterViewModel
 import com.seungma.daglo.presenter.list.viewmodel.ViewModelKey
 import dagger.Module
@@ -16,12 +15,10 @@ class ViewModelModule {
     @IntoMap
     @ViewModelKey(CharacterViewModel::class)
     fun provideCharacterViewModel(
-        loadCharactersUseCase: LoadCharactersUseCase,
-        searchCharactersUseCase: SearchCharactersUseCase
+        loadCharactersUseCase: LoadCharactersUseCase
     ): ViewModel {
         return CharacterViewModel(
-            loadCharactersUseCase = loadCharactersUseCase,
-            searchCharactersUseCase = searchCharactersUseCase
+            loadCharactersUseCase = loadCharactersUseCase
         )
     }
 }

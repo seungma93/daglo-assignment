@@ -17,6 +17,6 @@ import javax.inject.Singleton
         ViewModelModule::class
     ]
 )
-interface AppComponent {
+interface CharacterListFragmentComponent {
     fun inject(fragment: CharacterListFragment)
 }
