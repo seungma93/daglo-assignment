@@ -37,40 +37,51 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/ly_title"
-        android:background="@drawable/bg_character_search"
-        android:layout_marginStart="18dp"
-        android:layout_marginEnd="19dp"
-        android:layout_marginTop="15dp"
-        android:layout_marginBottom="15dp">
+        android:background="@drawable/bg_bottom_line"
+        >
 
-        <ImageView
-            android:id="@+id/iv_search"
-            android:layout_width="wrap_content"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            android:src="@drawable/ic_search"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"
-            android:layout_marginEnd="12dp"/>
+            android:layout_marginStart="18dp"
+            android:layout_marginEnd="19dp"
+            android:layout_marginTop="15dp"
+            android:layout_marginBottom="15dp"
+            android:background="@drawable/bg_character_search">
 
-        <EditText
-            android:id="@+id/et_text"
-            android:textColorHint="#a8acaf"
-            android:inputType="text"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:textColor="#FFFFFF"
-            android:textSize="15sp"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/iv_search"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginStart="14dp"
-            android:background="@null"
-            />
+            <ImageView
+                android:id="@+id/iv_search"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:src="@drawable/ic_search"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:layout_marginEnd="12dp"/>
 
+            <EditText
+                android:id="@+id/et_text"
+                android:textColorHint="#a8acaf"
+                android:inputType="text"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/iv_search"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginStart="14dp"
+                android:background="@null"
+                />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -80,7 +91,8 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ly_search">
+        app:layout_constraintTop_toBottomOf="@id/ly_search"
+        >
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_character_list"
