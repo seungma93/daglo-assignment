@@ -133,7 +133,11 @@ class CharacterViewModel @Inject constructor(
                             is HttpException -> {
                                 when(it.code()) {
                                     404 -> _viewEvent.emit(CharacterViewEvent.Error(message = "검색 결과가 없습니다"))
+                                    else -> _viewEvent.emit(CharacterViewEvent.Error(message = "서버 에러가 발생 했습니다"))
                                 }
+                            }
+                            else -> {
+                                _viewEvent.emit(CharacterViewEvent.Error(message = "알 수 없는 에러가 발생했습니다"))
                             }
                         }
                     }
