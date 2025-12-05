@@ -46,7 +46,7 @@ class LoadCharactersUseCaseTest {
                 species = "",
                 orgin = LocationEntity(name = "", url = ""),
                 location = LocationEntity(name = "", url = "")
-            )), nextPage = "2"
+            )), nextPage = 3, prevPage = 1
 
         )
 
