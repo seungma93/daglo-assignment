@@ -82,7 +82,7 @@ class CharacterViewModel @Inject constructor(
                 val characters = it.characters
                 val prevPage = it.prevPage
                 val nextPage = it.nextPage
-                Log.d("seungma", "패치")
+
                 _viewState.update { current ->
                     current.copy(
                         characters = characters,
@@ -121,7 +121,7 @@ class CharacterViewModel @Inject constructor(
                 val characters = it.characters
                 val prevPage = it.prevPage
                 val nextPage = it.nextPage
-                Log.d("seungma", "로드모어")
+
                 _viewState.update { current ->
                     current.copy(
                         characters = (current.characters + characters)
