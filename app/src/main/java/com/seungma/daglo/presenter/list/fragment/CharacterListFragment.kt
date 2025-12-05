@@ -50,28 +50,13 @@ class CharacterListFragment : Fragment() {
             if (!isLoading && lastVisibleItemPosition >= totalItemCount - threshold) {
                 viewLifecycleOwner.lifecycleScope.launch {
                     characterViewModel.viewState.value.nextPage?.let { nextPage ->
-                        when (binding.etText.text.isNullOrBlank()) {
-                            true -> {
-                                if (!characterViewModel.viewState.value.isLoading) {
-                                    characterViewModel.loadCharacters(
-                                        charactersLoadForm = CharactersLoadForm(
-                                            page = nextPage,
-                                            keyword = ""
-                                        )
-                                    )
-                                }
-                            }
-
-                            false -> {
-                                if (!characterViewModel.viewState.value.isLoading) {
-                                    characterViewModel.loadCharacters(
-                                        charactersLoadForm = CharactersLoadForm(
-                                            page = nextPage,
-                                            keyword = binding.etText.text.toString()
-                                        )
-                                    )
-                                }
-                            }
+                        if (!characterViewModel.viewState.value.isLoading) {
+                            characterViewModel.loadCharactersLoadMore(
+                                charactersLoadForm = CharactersLoadForm(
+                                    page = nextPage,
+                                    keyword = binding.etText.text.toString()
+                                )
+                            )
                         }
                     } ?: run {
                         Toast.makeText(requireContext(), "마지막 페이지입니다", Toast.LENGTH_SHORT).show()
@@ -116,34 +101,13 @@ class CharacterListFragment : Fragment() {
             subscribe()
             swipeRefreshLayout.setOnRefreshListener {
                 viewLifecycleOwner.lifecycleScope.launch {
-                    try {
-
-                        when (binding.etText.text.isNullOrBlank()) {
-                            true -> {
-                                if (!characterViewModel.viewState.value.isLoading) {
-                                    characterViewModel.loadCharacters(
-                                        charactersLoadForm = CharactersLoadForm(
-                                            page = 1,
-                                            keyword = ""
-                                        )
-                                    )
-                                }
-                            }
-
-                            false -> {
-                                if (!characterViewModel.viewState.value.isLoading) {
-                                    characterViewModel.loadCharacters(
-                                        charactersLoadForm = CharactersLoadForm(
-                                            page = 1,
-                                            keyword = binding.etText.text.toString()
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-
-                    } finally {
+                    if (!characterViewModel.viewState.value.isLoading) {
+                        characterViewModel.loadCharactersLoadFetch(
+                            charactersLoadForm = CharactersLoadForm(
+                                page = 1,
+                                keyword = binding.etText.text.toString()
+                            )
+                        )
                         swipeRefreshLayout.isRefreshing = false
                     }
                 }
@@ -184,22 +148,22 @@ class CharacterListFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             launch {
                 characterViewModel.viewState.collect {
-                    if (it.characters.isNotEmpty()) {
-                        adapter.submitList(it.characters)
-                    }
+                    adapter.submitList(it.characters)
                 }
             }
 
             launch {
                 characterViewModel.viewEvent.collect {
 
-                    when(it) {
+                    when (it) {
                         is CharacterViewEvent.Scroll -> {
                             binding.rvCharacterList.scrollToPosition(0)
                         }
+
                         is CharacterViewEvent.Error -> {
                             Toast.makeText(requireContext(), it.message, Toast.LENGTH_SHORT).show()
                         }
+
                         else -> {}
                     }
 

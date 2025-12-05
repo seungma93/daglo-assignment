@@ -21,24 +21,16 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import javax.inject.Inject
 
-sealed class CharacterViewEvent{
-    data class Error(val message: String): CharacterViewEvent()
-    data class Scroll(val scrollToTop: Boolean): CharacterViewEvent()
+sealed class CharacterViewEvent {
+    data class Error(val message: String) : CharacterViewEvent()
+    data class Scroll(val scrollToTop: Boolean) : CharacterViewEvent()
 }
 
 class CharacterViewModel @Inject constructor(
     private val loadCharactersUseCase: LoadCharactersUseCase
 ) : ViewModel() {
 
-    private val _viewState =
-        MutableStateFlow(
-            CharacterViewState(
-                characters = emptyList(),
-                nextPage = null,
-                isLoading = false,
-                keyword = ""
-            )
-        )
+    private val _viewState = MutableStateFlow(CharacterViewState())
     val viewState: StateFlow<CharacterViewState> = _viewState.asStateFlow()
 
     private val _viewEvent = MutableSharedFlow<CharacterViewEvent>()
@@ -54,7 +46,7 @@ class CharacterViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             consumer.collect {
-                loadCharacters(
+                loadCharactersLoadFetch(
                     charactersLoadForm = CharactersLoadForm(
                         page = viewState.value.nextPage ?: 1, keyword = it
                     )
@@ -64,10 +56,10 @@ class CharacterViewModel @Inject constructor(
     }
 
     data class CharacterViewState(
-        val characters: List<CharacterEntity>,
-        val nextPage: Int?,
-        val isLoading: Boolean,
-        val keyword: String,
+        val characters: List<CharacterEntity> = emptyList(),
+        val nextPage: Int? = null,
+        val isLoading: Boolean = false,
+        val keyword: String = "",
     )
 
     fun sendQuery(query: String) {
@@ -76,78 +68,95 @@ class CharacterViewModel @Inject constructor(
         }
     }
 
-    fun loadCharacters(charactersLoadForm: CharactersLoadForm) {
-        if(viewState.value.isLoading) return
+    fun loadCharactersLoadFetch(charactersLoadForm: CharactersLoadForm) {
+        if (viewState.value.isLoading) return
+
+        _viewState.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
+            runCatching {
+                val charactersLoadEntity =
+                    loadCharactersUseCase(charactersLoadForm = charactersLoadForm.copy(page = 1))
 
-            _viewState.update { it.copy(isLoading = true) }
+                val characters = charactersLoadEntity.characters
+                val nextPage = parseNextPage(nextUrl = charactersLoadEntity.nextPage)
 
-            when (viewState.value.keyword == charactersLoadForm.keyword) {
-
-                true -> {
-                    runCatching {
-                        val charactersLoadEntity =
-                            loadCharactersUseCase(charactersLoadForm = charactersLoadForm)
-
-                        val characters = charactersLoadEntity.characters
-                        val nextPage = parseNextPage(nextUrl = charactersLoadEntity.nextPage)
-
-                        _viewState.update { current ->
-                            current.copy(
-                                characters = if (charactersLoadForm.page == 1) characters else current.characters + characters,
-                                nextPage = nextPage,
-                                isLoading = false,
-                                keyword = charactersLoadForm.keyword
-                            )
-                        }
-
-                        if(charactersLoadForm.page == 1) {
-                            _viewEvent.emit(CharacterViewEvent.Scroll(scrollToTop = true))
-                        }
-
-                    }.onFailure {
-                        _viewState.update { it.copy(isLoading = false) }
-                    }
+                _viewState.update { current ->
+                    current.copy(
+                        characters = characters,
+                        nextPage = nextPage,
+                        isLoading = false,
+                        keyword = charactersLoadForm.keyword
+                    )
                 }
-
-                false -> {
-                    runCatching {
-                        val charactersLoadEntity =
-                            loadCharactersUseCase(charactersLoadForm = charactersLoadForm.copy(page = 1))
-
-                        val characters = charactersLoadEntity.characters
-                        val nextPage = parseNextPage(nextUrl = charactersLoadEntity.nextPage)
-                        _viewState.update { current ->
-                            current.copy(
-                                characters = characters,
-                                nextPage = nextPage,
-                                isLoading = false,
-                                keyword = charactersLoadForm.keyword
-                            )
-                        }
-                        _viewEvent.emit(CharacterViewEvent.Scroll(scrollToTop = true))
-                    }.onFailure {
-                        _viewState.update { it.copy(isLoading = false) }
-                        when(it) {
-                            is HttpException -> {
-                                when(it.code()) {
-                                    404 -> _viewEvent.emit(CharacterViewEvent.Error(message = "검색 결과가 없습니다"))
-                                    else -> _viewEvent.emit(CharacterViewEvent.Error(message = "서버 에러가 발생 했습니다"))
-                                }
-                            }
-                            else -> {
-                                _viewEvent.emit(CharacterViewEvent.Error(message = "알 수 없는 에러가 발생했습니다"))
-                            }
+                _viewEvent.emit(CharacterViewEvent.Scroll(scrollToTop = true))
+            }.onFailure {
+                when (it) {
+                    is HttpException -> {
+                        when (it.code()) {
+                            404 -> _viewEvent.emit(CharacterViewEvent.Error(message = "검색 결과가 없습니다"))
+                            else -> _viewEvent.emit(CharacterViewEvent.Error(message = "서버 에러가 발생 했습니다"))
                         }
                     }
 
+                    else -> {
+                        _viewEvent.emit(CharacterViewEvent.Error(message = "알 수 없는 에러가 발생했습니다"))
+                    }
                 }
-
             }
+        }.invokeOnCompletion {
+            _viewState.update { it.copy(isLoading = false) }
+        }
 
+
+    }
+
+    fun loadCharactersLoadMore(charactersLoadForm: CharactersLoadForm) {
+
+        if (viewState.value.isLoading) return
+
+        _viewState.update { it.copy(isLoading = true) }
+
+        viewModelScope.launch {
+            runCatching {
+                val charactersLoadEntity =
+                    loadCharactersUseCase(charactersLoadForm = charactersLoadForm)
+
+                val characters = charactersLoadEntity.characters
+                val nextPage = parseNextPage(nextUrl = charactersLoadEntity.nextPage)
+
+                _viewState.update { current ->
+                    current.copy(
+                        characters = current.characters + characters,
+                        nextPage = nextPage,
+                        isLoading = false,
+                        keyword = charactersLoadForm.keyword
+                    )
+                }
+
+                if (charactersLoadForm.page == 1) {
+                    _viewEvent.emit(CharacterViewEvent.Scroll(scrollToTop = true))
+                }
+
+            }.onFailure {
+                when (it) {
+                    is HttpException -> {
+                        when (it.code()) {
+                            404 -> _viewEvent.emit(CharacterViewEvent.Error(message = "검색 결과가 없습니다"))
+                            else -> _viewEvent.emit(CharacterViewEvent.Error(message = "서버 에러가 발생 했습니다"))
+                        }
+                    }
+
+                    else -> {
+                        _viewEvent.emit(CharacterViewEvent.Error(message = "알 수 없는 에러가 발생했습니다"))
+                    }
+                }
+            }
+        }.invokeOnCompletion {
+            _viewState.update { it.copy(isLoading = false) }
         }
     }
+
 
     private fun parseNextPage(nextUrl: String?): Int? {
         return nextUrl?.let {
