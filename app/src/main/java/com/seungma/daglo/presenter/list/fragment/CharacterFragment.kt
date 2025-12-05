@@ -16,7 +16,6 @@ import com.seungma.daglo.databinding.FragmentCharacterBinding
 import com.seungma.daglo.di.components.DaggerCharacterFragmentComponent
 import com.seungma.daglo.domain.list.entity.CharacterItemKeyEntity
 import com.seungma.daglo.presenter.list.form.CharacterLoadForm
-import com.seungma.daglo.presenter.list.fragment.CharacterFragment.Companion.CHARACTER_ITEM_KEY
 import com.seungma.daglo.presenter.list.viewmodel.CharacterInfoViewEvent
 import com.seungma.daglo.presenter.list.viewmodel.CharacterInfoViewModel
 import com.seungma.daglo.presenter.list.viewmodel.ViewModelFactory

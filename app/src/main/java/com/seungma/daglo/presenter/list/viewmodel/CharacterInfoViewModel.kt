@@ -2,6 +2,8 @@ package com.seungma.daglo.presenter.list.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.seungma.daglo.data.CharacterResultEmptyException
+import com.seungma.daglo.data.CharacterResultServerException
 import com.seungma.daglo.domain.list.entity.CharacterEntity
 import com.seungma.daglo.domain.list.entity.LocationEntity
 import com.seungma.daglo.domain.list.usecase.LoadCharacterUseCase
@@ -14,61 +16,53 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
 import javax.inject.Inject
 
-sealed class CharacterInfoViewEvent{
-    data class Error(val message: String): CharacterInfoViewEvent()
+sealed class CharacterInfoViewEvent {
+    data class Error(val message: String) : CharacterInfoViewEvent()
 }
+
+data class CharacterInfoViewState(
+    val character: CharacterEntity = CharacterEntity(
+        id = 0,
+        image = "",
+        name = "",
+        status = "",
+        gender = "",
+        species = "",
+        orgin = LocationEntity(name = "", url = ""),
+        location = LocationEntity(name = "", url = "")
+    )
+)
 
 class CharacterInfoViewModel @Inject constructor(
     private val loadCharacterUseCase: LoadCharacterUseCase
 ) : ViewModel() {
 
-    data class CharacterInfoViewState(
-        val character: CharacterEntity
-    )
-
-    private val _viewState =
-        MutableStateFlow(
-            CharacterInfoViewState(
-                character = CharacterEntity(
-                    id = 0,
-                    image = "",
-                    name = "",
-                    status = "",
-                    gender = "",
-                    species = "",
-                    orgin = LocationEntity(name = "", url = ""),
-                    location = LocationEntity(name = "", url = "")
-                )
-            )
-        )
+    private val _viewState = MutableStateFlow(CharacterInfoViewState())
     val viewState: StateFlow<CharacterInfoViewState> = _viewState.asStateFlow()
 
     private val _viewEvent = MutableSharedFlow<CharacterInfoViewEvent>()
     val viewEvent: SharedFlow<CharacterInfoViewEvent> = _viewEvent.asSharedFlow()
 
 
-
     fun loadCharacter(characterLoadForm: CharacterLoadForm) {
         viewModelScope.launch {
             runCatching {
-                val character = loadCharacterUseCase(characterLoadForm = characterLoadForm)
-
-                _viewState.update {
-                    it.copy(
+                loadCharacterUseCase(characterLoadForm = characterLoadForm)
+            }.onSuccess { character ->
+                _viewState.update { current ->
+                    current.copy(
                         character = character
                     )
                 }
-
             }.onFailure {
-                when(it) {
-                    is HttpException -> {
-                        when(it.code()) {
-                            404 -> _viewEvent.emit(CharacterInfoViewEvent.Error(message = "캐릭터 상세결과가 없습니다"))
-                            else -> _viewEvent.emit(CharacterInfoViewEvent.Error(message = "서버 에러가 발생 했습니다"))
-                        }
+                when (it) {
+                    is CharacterResultEmptyException -> {
+                        _viewEvent.emit(CharacterInfoViewEvent.Error(message = "검색 결과가 없습니다"))
+                    }
+                    is CharacterResultServerException -> {
+                        _viewEvent.emit(CharacterInfoViewEvent.Error(message = "서버 에러가 발생했습니다"))
                     }
                     else -> {
                         _viewEvent.emit(CharacterInfoViewEvent.Error(message = "알 수 없는 에러가 발생했습니다"))

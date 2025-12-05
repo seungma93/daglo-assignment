@@ -1,8 +1,10 @@
 package com.seungma.daglo.presenter.list.viewmodel
 
-import androidx.core.net.toUri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.seungma.daglo.data.CharacterResultEmptyException
+import com.seungma.daglo.data.CharacterResultServerException
 import com.seungma.daglo.domain.list.entity.CharacterEntity
 import com.seungma.daglo.domain.list.usecase.LoadCharactersUseCase
 import com.seungma.daglo.presenter.list.form.CharactersLoadForm
@@ -18,12 +20,20 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
 import javax.inject.Inject
 
 sealed class CharacterViewEvent {
     data class Error(val message: String) : CharacterViewEvent()
-    data class Scroll(val scrollToTop: Boolean) : CharacterViewEvent()
+}
+
+data class CharacterViewState(
+    val characters: List<CharacterEntity> = emptyList(),
+    val nextPage: Int? = null,
+    val prevPage: Int? = null,
+    val isLoading: Boolean = false,
+    val keyword: String = ""
+) {
+    val isFirstPage = prevPage == null
 }
 
 class CharacterViewModel @Inject constructor(
@@ -42,25 +52,13 @@ class CharacterViewModel @Inject constructor(
         .distinctUntilChanged()
         .debounce(400)
 
-
     init {
         viewModelScope.launch {
             consumer.collect {
-                loadCharactersLoadFetch(
-                    charactersLoadForm = CharactersLoadForm(
-                        page = viewState.value.nextPage ?: 1, keyword = it
-                    )
-                )
+                fetch(query = it)
             }
         }
     }
-
-    data class CharacterViewState(
-        val characters: List<CharacterEntity> = emptyList(),
-        val nextPage: Int? = null,
-        val isLoading: Boolean = false,
-        val keyword: String = "",
-    )
 
     fun sendQuery(query: String) {
         viewModelScope.launch {
@@ -68,85 +66,80 @@ class CharacterViewModel @Inject constructor(
         }
     }
 
-    fun loadCharactersLoadFetch(charactersLoadForm: CharactersLoadForm) {
+    fun fetch(query: String) {
         if (viewState.value.isLoading) return
-
         _viewState.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
             runCatching {
-                val charactersLoadEntity =
-                    loadCharactersUseCase(charactersLoadForm = charactersLoadForm.copy(page = 1))
-
-                val characters = charactersLoadEntity.characters
-                val nextPage = parseNextPage(nextUrl = charactersLoadEntity.nextPage)
-
+                loadCharactersUseCase(
+                    charactersLoadForm = CharactersLoadForm(
+                        page = null,
+                        keyword = query
+                    )
+                )
+            }.onSuccess {
+                val characters = it.characters
+                val prevPage = it.prevPage
+                val nextPage = it.nextPage
+                Log.d("seungma", "패치")
                 _viewState.update { current ->
                     current.copy(
                         characters = characters,
+                        prevPage = prevPage,
                         nextPage = nextPage,
-                        isLoading = false,
-                        keyword = charactersLoadForm.keyword
+                        keyword = query
                     )
                 }
-                _viewEvent.emit(CharacterViewEvent.Scroll(scrollToTop = true))
             }.onFailure {
                 when (it) {
-                    is HttpException -> {
-                        when (it.code()) {
-                            404 -> _viewEvent.emit(CharacterViewEvent.Error(message = "검색 결과가 없습니다"))
-                            else -> _viewEvent.emit(CharacterViewEvent.Error(message = "서버 에러가 발생 했습니다"))
-                        }
+                    is CharacterResultEmptyException -> {
+                        _viewEvent.emit(CharacterViewEvent.Error(message = "검색 결과가 없습니다"))
                     }
-
+                    is CharacterResultServerException -> {
+                        _viewEvent.emit(CharacterViewEvent.Error(message = "서버 에러가 발생했습니다"))
+                    }
                     else -> {
                         _viewEvent.emit(CharacterViewEvent.Error(message = "알 수 없는 에러가 발생했습니다"))
                     }
                 }
             }
+
         }.invokeOnCompletion {
             _viewState.update { it.copy(isLoading = false) }
         }
-
-
     }
 
-    fun loadCharactersLoadMore(charactersLoadForm: CharactersLoadForm) {
-
+    fun loadMore(charactersLoadForm: CharactersLoadForm) {
         if (viewState.value.isLoading) return
-
         _viewState.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
             runCatching {
-                val charactersLoadEntity =
-                    loadCharactersUseCase(charactersLoadForm = charactersLoadForm)
-
-                val characters = charactersLoadEntity.characters
-                val nextPage = parseNextPage(nextUrl = charactersLoadEntity.nextPage)
-
+                loadCharactersUseCase(charactersLoadForm = charactersLoadForm)
+            }.onSuccess {
+                val characters = it.characters
+                val prevPage = it.prevPage
+                val nextPage = it.nextPage
+                Log.d("seungma", "로드모어")
                 _viewState.update { current ->
                     current.copy(
-                        characters = current.characters + characters,
+                        characters = (current.characters + characters)
+                            .toSet()
+                            .toList(),
+                        prevPage = prevPage,
                         nextPage = nextPage,
-                        isLoading = false,
                         keyword = charactersLoadForm.keyword
                     )
                 }
-
-                if (charactersLoadForm.page == 1) {
-                    _viewEvent.emit(CharacterViewEvent.Scroll(scrollToTop = true))
-                }
-
             }.onFailure {
                 when (it) {
-                    is HttpException -> {
-                        when (it.code()) {
-                            404 -> _viewEvent.emit(CharacterViewEvent.Error(message = "검색 결과가 없습니다"))
-                            else -> _viewEvent.emit(CharacterViewEvent.Error(message = "서버 에러가 발생 했습니다"))
-                        }
+                    is CharacterResultEmptyException -> {
+                        _viewEvent.emit(CharacterViewEvent.Error(message = "검색 결과가 없습니다"))
                     }
-
+                    is CharacterResultServerException -> {
+                        _viewEvent.emit(CharacterViewEvent.Error(message = "서버 에러가 발생했습니다"))
+                    }
                     else -> {
                         _viewEvent.emit(CharacterViewEvent.Error(message = "알 수 없는 에러가 발생했습니다"))
                     }
@@ -154,13 +147,6 @@ class CharacterViewModel @Inject constructor(
             }
         }.invokeOnCompletion {
             _viewState.update { it.copy(isLoading = false) }
-        }
-    }
-
-
-    private fun parseNextPage(nextUrl: String?): Int? {
-        return nextUrl?.let {
-            it.toUri().getQueryParameter("page")?.toInt()
         }
     }
 }

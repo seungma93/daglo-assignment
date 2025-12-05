@@ -1,5 +1,6 @@
 package com.seungma.daglo.data.mapper
 
+import androidx.core.net.toUri
 import com.seungma.daglo.data.model.response.CharacterResponse
 import com.seungma.daglo.data.model.response.LocationResponse
 import com.seungma.daglo.data.model.response.PagedResponse
@@ -13,12 +14,18 @@ fun PagedResponse.toEntity(): CharactersLoadEntity {
         characters = results?.map {
             it.toEntity()
         } ?: emptyList(),
-        nextPage = info?.next
+        prevPage = info?.prev?.let {
+            it.toUri().getQueryParameter("page")?.toInt()
+        },
+        nextPage = info?.next?.let {
+            it.toUri().getQueryParameter("page")?.toInt()
+        }
     )
 }
 
 fun CharacterResponse.toEntity(): CharacterEntity {
-    val locationEntity = location?.toEntity() ?: LocationEntity(name = "", url = "")
+    val origin = origin?.toEntity() ?: LocationEntity(name = "", url = "")
+    val location = location?.toEntity() ?: LocationEntity(name = "", url = "")
     return CharacterEntity(
         id = id ?: throw Exception("id is null"),
         image = image.orEmpty(),
@@ -26,8 +33,8 @@ fun CharacterResponse.toEntity(): CharacterEntity {
         status = status.orEmpty(),
         gender = gender.orEmpty(),
         species = species.orEmpty(),
-        orgin = locationEntity,
-        location = locationEntity
+        orgin = origin,
+        location = location
     )
 }
 

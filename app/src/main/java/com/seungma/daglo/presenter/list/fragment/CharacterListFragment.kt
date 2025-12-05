@@ -51,7 +51,7 @@ class CharacterListFragment : Fragment() {
                 viewLifecycleOwner.lifecycleScope.launch {
                     characterViewModel.viewState.value.nextPage?.let { nextPage ->
                         if (!characterViewModel.viewState.value.isLoading) {
-                            characterViewModel.loadCharactersLoadMore(
+                            characterViewModel.loadMore(
                                 charactersLoadForm = CharactersLoadForm(
                                     page = nextPage,
                                     keyword = binding.etText.text.toString()
@@ -102,12 +102,7 @@ class CharacterListFragment : Fragment() {
             swipeRefreshLayout.setOnRefreshListener {
                 viewLifecycleOwner.lifecycleScope.launch {
                     if (!characterViewModel.viewState.value.isLoading) {
-                        characterViewModel.loadCharactersLoadFetch(
-                            charactersLoadForm = CharactersLoadForm(
-                                page = 1,
-                                keyword = binding.etText.text.toString()
-                            )
-                        )
+                        characterViewModel.fetch(query = binding.etText.text.toString())
                         swipeRefreshLayout.isRefreshing = false
                     }
                 }
@@ -148,7 +143,13 @@ class CharacterListFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             launch {
                 characterViewModel.viewState.collect {
-                    adapter.submitList(it.characters)
+                    if(!it.isLoading) {
+                        adapter.submitList(it.characters) {
+                            if(it.isFirstPage) {
+                                binding.rvCharacterList.scrollToPosition(0)
+                            }
+                        }
+                    }
                 }
             }
 
@@ -156,10 +157,6 @@ class CharacterListFragment : Fragment() {
                 characterViewModel.viewEvent.collect {
 
                     when (it) {
-                        is CharacterViewEvent.Scroll -> {
-                            binding.rvCharacterList.scrollToPosition(0)
-                        }
-
                         is CharacterViewEvent.Error -> {
                             Toast.makeText(requireContext(), it.message, Toast.LENGTH_SHORT).show()
                         }
