@@ -41,6 +41,12 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    // 테스트 옵션
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -50,6 +56,10 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    
+    // 테스트 의존성 (도메인 테스트)
+    testImplementation("io.mockk:mockk:1.13.8") // MockK
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0") // Coroutines Test
 
     // ViewModel & Lifecycle (라이프사이클 스코프 포함)
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
