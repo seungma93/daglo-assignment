@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,6 +24,7 @@ import com.seungma.daglo.presenter.list.form.CharactersLoadForm
 import com.seungma.daglo.presenter.list.viewmodel.CharacterViewEvent
 import com.seungma.daglo.presenter.list.viewmodel.CharacterViewModel
 import com.seungma.daglo.presenter.list.viewmodel.ViewModelFactory
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -142,12 +144,10 @@ class CharacterListFragment : Fragment() {
     private fun subscribe() {
         viewLifecycleOwner.lifecycleScope.launch {
             launch {
-                characterViewModel.viewState.collect {
-                    if(!it.isLoading) {
-                        adapter.submitList(it.characters) {
-                            if(it.isFirstPage) {
-                                binding.rvCharacterList.scrollToPosition(0)
-                            }
+                characterViewModel.viewState.filter { !it.isLoading }.collect {
+                    adapter.submitList(it.characters) {
+                        if (it.isFirstPage) {
+                            binding.rvCharacterList.scrollToPosition(0)
                         }
                     }
                 }
